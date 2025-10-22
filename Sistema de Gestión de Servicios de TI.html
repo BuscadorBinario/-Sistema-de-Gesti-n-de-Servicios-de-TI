@@ -1,0 +1,2546 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Gestión de Servicios de TI</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+
+        header {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            margin-bottom: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        h1 {
+            color: #667eea;
+            font-size: 2em;
+        }
+
+        .nav-tabs {
+            background: white;
+            padding: 15px 25px;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .tab-btn {
+            padding: 12px 25px;
+            border: none;
+            background: #f0f0f0;
+            color: #666;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .tab-btn.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .tab-btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            transition: transform 0.3s;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .stat-card h3 {
+            color: #666;
+            font-size: 0.85em;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+        }
+
+        .stat-value {
+            font-size: 2.2em;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .stat-card.pending .stat-value { color: #f39c12; }
+        .stat-card.progress .stat-value { color: #3498db; }
+        .stat-card.resolved .stat-value { color: #2ecc71; }
+        .stat-card.critical .stat-value { color: #e74c3c; }
+        .stat-card.info .stat-value { color: #9b59b6; }
+        .stat-card.warning .stat-value { color: #f39c12; }
+
+        .controls {
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: all 0.3s;
+            font-weight: 600;
+        }
+
+        button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        select, input {
+            padding: 10px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 1em;
+            outline: none;
+            transition: border 0.3s;
+        }
+
+        select:focus, input:focus {
+            border-color: #667eea;
+        }
+
+        .content-container {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            overflow-x: auto;
+            margin-bottom: 30px;
+        }
+
+        .charts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .chart-container {
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            height: 350px;
+        }
+
+        .chart-container h3 {
+            color: #667eea;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .chart-wrapper {
+            position: relative;
+            height: calc(100% - 40px);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 900px;
+        }
+
+        th, td {
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        th {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.85em;
+        }
+
+        tr:hover {
+            background: #f8f9fa;
+        }
+
+        .badge {
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            font-weight: 600;
+            display: inline-block;
+        }
+
+        .badge.low { background: #d1f2eb; color: #0f6848; }
+        .badge.medium { background: #fff3cd; color: #856404; }
+        .badge.high { background: #f8d7da; color: #721c24; }
+        .badge.critical { background: #f5c6cb; color: #491217; }
+
+        .status-pending { background: #fff3cd; color: #856404; }
+        .status-progress { background: #cce5ff; color: #004085; }
+        .status-resolved { background: #d4edda; color: #155724; }
+        .status-closed { background: #e2e3e5; color: #383d41; }
+        .status-testing { background: #e7d4ff; color: #4a1475; }
+        .status-deployed { background: #c3e6cb; color: #155724; }
+        .status-approved { background: #bee5eb; color: #0c5460; }
+
+        .actions button {
+            padding: 6px 12px;
+            font-size: 0.85em;
+            margin-right: 5px;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            overflow-y: auto;
+            padding: 20px;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            max-width: 900px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .modal-content h2 {
+            margin-bottom: 20px;
+            color: #667eea;
+            border-bottom: 3px solid #667eea;
+            padding-bottom: 10px;
+        }
+
+        .detail-section {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+
+        .detail-section h3 {
+            color: #667eea;
+            margin-bottom: 15px;
+            font-size: 1.2em;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .detail-row {
+            display: grid;
+            grid-template-columns: 200px 1fr;
+            gap: 15px;
+            margin-bottom: 12px;
+            padding: 10px;
+            background: white;
+            border-radius: 5px;
+        }
+
+        .detail-label {
+            font-weight: 600;
+            color: #555;
+        }
+
+        .detail-value {
+            color: #333;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 25px;
+            background: #e0e0e0;
+            border-radius: 15px;
+            overflow: hidden;
+            margin-top: 10px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 0.85em;
+            transition: width 0.3s;
+        }
+
+        .timeline {
+            position: relative;
+            padding-left: 30px;
+        }
+
+        .timeline-item {
+            position: relative;
+            padding-bottom: 20px;
+        }
+
+        .timeline-item:before {
+            content: '';
+            position: absolute;
+            left: -24px;
+            top: 5px;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #667eea;
+        }
+
+        .timeline-item:after {
+            content: '';
+            position: absolute;
+            left: -18px;
+            top: 17px;
+            width: 2px;
+            height: calc(100% - 17px);
+            background: #e0e0e0;
+        }
+
+        .timeline-item:last-child:after {
+            display: none;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 1em;
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        .auto-status {
+            display: inline-block;
+            margin-left: 10px;
+            padding: 5px 10px;
+            background: #d4edda;
+            color: #155724;
+            border-radius: 5px;
+            font-size: 0.85em;
+        }
+
+        .report-section {
+            margin-bottom: 30px;
+            page-break-inside: avoid;
+        }
+
+        .report-section h3 {
+            color: #667eea;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
+            margin-bottom: 15px;
+        }
+
+        .report-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .report-card {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 10px;
+            border-left: 4px solid #667eea;
+        }
+
+        .report-card h4 {
+            color: #555;
+            font-size: 0.9em;
+            margin-bottom: 8px;
+        }
+
+        .report-card .value {
+            font-size: 1.8em;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        @media print {
+            body {
+                background: white;
+                padding: 0;
+            }
+
+            .nav-tabs, .controls, button, .actions {
+                display: none !important;
+            }
+
+            .content-container {
+                box-shadow: none;
+                page-break-inside: avoid;
+            }
+
+            .chart-container {
+                page-break-inside: avoid;
+            }
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 1.5em;
+            }
+            
+            .controls {
+                flex-direction: column;
+            }
+            
+            .controls button,
+            .controls select,
+            .controls input {
+                width: 100%;
+            }
+
+            .detail-row {
+                grid-template-columns: 1fr;
+                gap: 5px;
+            }
+
+            .charts-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .chart-container {
+                height: 300px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🔧 Sistema de Gestión de Servicios de TI</h1>
+            <div class="auto-status">✓ Auto-generación activa</div>
+        </header>
+
+        <div class="nav-tabs">
+            <button class="tab-btn active" onclick="switchTab('tickets')">📋 Tickets</button>
+            <button class="tab-btn" onclick="switchTab('dashboard')">📊 Dashboard</button>
+            <button class="tab-btn" onclick="switchTab('sla')">⏱️ Niveles de Servicio</button>
+            <button class="tab-btn" onclick="switchTab('requests')">📝 Solicitudes</button>
+            <button class="tab-btn" onclick="switchTab('deployment')">🚀 Despliegue</button>
+            <button class="tab-btn" onclick="switchTab('infrastructure')">🖥️ Infraestructura</button>
+            <button class="tab-btn" onclick="switchTab('development')">💻 Desarrollo</button>
+            <button class="tab-btn" onclick="switchTab('testing')">✅ Pruebas</button>
+            <button class="tab-btn" onclick="switchTab('reports')">📄 Informes</button>
+        </div>
+
+        <!-- TAB: TICKETS -->
+        <div id="tab-tickets" class="tab-content active">
+            <div class="stats">
+                <div class="stat-card pending">
+                    <h3>Tickets Pendientes</h3>
+                    <div class="stat-value" id="pendingCount">0</div>
+                </div>
+                <div class="stat-card progress">
+                    <h3>En Progreso</h3>
+                    <div class="stat-value" id="progressCount">0</div>
+                </div>
+                <div class="stat-card resolved">
+                    <h3>Resueltos</h3>
+                    <div class="stat-value" id="resolvedCount">0</div>
+                </div>
+                <div class="stat-card critical">
+                    <h3>Críticos</h3>
+                    <div class="stat-value" id="criticalCount">0</div>
+                </div>
+            </div>
+
+            <div class="controls">
+                <button onclick="addTicketModal()">➕ Nuevo Ticket</button>
+                <button onclick="manualGenerateTicket()">🤖 Generar Automático</button>
+                <button onclick="exportData()">📊 Exportar Datos</button>
+                
+                <select id="filterStatus" onchange="filterTickets()">
+                    <option value="all">Todos los estados</option>
+                    <option value="pending">Pendiente</option>
+                    <option value="progress">En Progreso</option>
+                    <option value="resolved">Resuelto</option>
+                    <option value="closed">Cerrado</option>
+                </select>
+
+                <select id="filterPriority" onchange="filterTickets()">
+                    <option value="all">Todas las prioridades</option>
+                    <option value="low">Baja</option>
+                    <option value="medium">Media</option>
+                    <option value="high">Alta</option>
+                    <option value="critical">Crítica</option>
+                </select>
+
+                <input type="text" id="searchInput" placeholder="🔍 Buscar tickets..." onkeyup="filterTickets()">
+            </div>
+
+            <div class="content-container">
+                <h2 style="margin-bottom: 20px; color: #333;">Lista de Tickets</h2>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Título</th>
+                            <th>Categoría</th>
+                            <th>Prioridad</th>
+                            <th>Estado</th>
+                            <th>Asignado</th>
+                            <th>Fecha</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="ticketsTable"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- TAB: DASHBOARD -->
+        <div id="tab-dashboard" class="tab-content">
+            <div class="stats">
+                <div class="stat-card info">
+                    <h3>Total Tickets</h3>
+                    <div class="stat-value" id="totalTickets">0</div>
+                </div>
+                <div class="stat-card resolved">
+                    <h3>Tasa de Resolución</h3>
+                    <div class="stat-value" id="resolutionRate">0%</div>
+                </div>
+                <div class="stat-card progress">
+                    <h3>Tiempo Promedio</h3>
+                    <div class="stat-value" id="avgTime">0h</div>
+                </div>
+                <div class="stat-card warning">
+                    <h3>Satisfacción</h3>
+                    <div class="stat-value" id="satisfaction">0%</div>
+                </div>
+            </div>
+
+            <div class="charts-grid">
+                <div class="chart-container">
+                    <h3>📊 Tickets por Estado</h3>
+                    <div class="chart-wrapper">
+                        <canvas id="statusChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="chart-container">
+                    <h3>📈 Tickets por Prioridad</h3>
+                    <div class="chart-wrapper">
+                        <canvas id="priorityChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="chart-container">
+                    <h3>📉 Tickets por Categoría</h3>
+                    <div class="chart-wrapper">
+                        <canvas id="categoryChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="chart-container">
+                    <h3>⏱️ Cumplimiento de SLA</h3>
+                    <div class="chart-wrapper">
+                        <canvas id="slaChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="chart-container">
+                    <h3>👥 Carga de Trabajo por Técnico</h3>
+                    <div class="chart-wrapper">
+                        <canvas id="technicianChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="chart-container">
+                    <h3>📅 Tendencia de Tickets (Últimos 7 días)</h3>
+                    <div class="chart-wrapper">
+                        <canvas id="trendChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB: SLA -->
+        <div id="tab-sla" class="tab-content">
+            <div class="stats">
+                <div class="stat-card info">
+                    <h3>SLA Cumplidos</h3>
+                    <div class="stat-value" id="slaCompliant">0</div>
+                </div>
+                <div class="stat-card warning">
+                    <h3>En Riesgo</h3>
+                    <div class="stat-value" id="slaRisk">0</div>
+                </div>
+                <div class="stat-card critical">
+                    <h3>Incumplidos</h3>
+                    <div class="stat-value" id="slaBreached">0</div>
+                </div>
+                <div class="stat-card progress">
+                    <h3>Tasa de Cumplimiento</h3>
+                    <div class="stat-value" id="slaRate">0%</div>
+                </div>
+            </div>
+            <div class="content-container" id="slaContent"></div>
+        </div>
+
+        <!-- TAB: SOLICITUDES -->
+        <div id="tab-requests" class="tab-content">
+            <div class="stats">
+                <div class="stat-card pending">
+                    <h3>Solicitudes Pendientes</h3>
+                    <div class="stat-value" id="requestsPending">0</div>
+                </div>
+                <div class="stat-card progress">
+                    <h3>En Proceso</h3>
+                    <div class="stat-value" id="requestsProgress">0</div>
+                </div>
+                <div class="stat-card resolved">
+                    <h3>Completadas</h3>
+                    <div class="stat-value" id="requestsCompleted">0</div>
+                </div>
+            </div>
+            <div class="content-container" id="requestsContent"></div>
+        </div>
+
+        <!-- TAB: DESPLIEGUE -->
+        <div id="tab-deployment" class="tab-content">
+            <div class="stats">
+                <div class="stat-card info">
+                    <h3>Despliegues Programados</h3>
+                    <div class="stat-value" id="deployScheduled">0</div>
+                </div>
+                <div class="stat-card progress">
+                    <h3>En Proceso</h3>
+                    <div class="stat-value" id="deployProgress">0</div>
+                </div>
+                <div class="stat-card resolved">
+                    <h3>Completados</h3>
+                    <div class="stat-value" id="deployCompleted">0</div>
+                </div>
+            </div>
+            <div class="content-container" id="deploymentContent"></div>
+        </div>
+
+        <!-- TAB: INFRAESTRUCTURA -->
+        <div id="tab-infrastructure" class="tab-content">
+            <div class="stats">
+                <div class="stat-card info">
+                    <h3>Servidores Activos</h3>
+                    <div class="stat-value" id="serversActive">0</div>
+                </div>
+                <div class="stat-card warning">
+                    <h3>Mantenimiento</h3>
+                    <div class="stat-value" id="serversMaintenance">0</div>
+                </div>
+                <div class="stat-card resolved">
+                    <h3>Disponibilidad</h3>
+                    <div class="stat-value" id="availability">0%</div>
+                </div>
+            </div>
+            <div class="content-container" id="infrastructureContent"></div>
+        </div>
+
+        <!-- TAB: DESARROLLO -->
+        <div id="tab-development" class="tab-content">
+            <div class="stats">
+                <div class="stat-card pending">
+                    <h3>En Desarrollo</h3>
+                    <div class="stat-value" id="devInProgress">0</div>
+                </div>
+                <div class="stat-card progress">
+                    <h3>En Revisión</h3>
+                    <div class="stat-value" id="devReview">0</div>
+                </div>
+                <div class="stat-card resolved">
+                    <h3>Completados</h3>
+                    <div class="stat-value" id="devCompleted">0</div>
+                </div>
+            </div>
+            <div class="content-container" id="developmentContent"></div>
+        </div>
+
+        <!-- TAB: PRUEBAS -->
+        <div id="tab-testing" class="tab-content">
+            <div class="stats">
+                <div class="stat-card pending">
+                    <h3>Pendientes</h3>
+                    <div class="stat-value" id="testPending">0</div>
+                </div>
+                <div class="stat-card progress">
+                    <h3>En Ejecución</h3>
+                    <div class="stat-value" id="testRunning">0</div>
+                </div>
+                <div class="stat-card resolved">
+                    <h3>Aprobados</h3>
+                    <div class="stat-value" id="testPassed">0</div>
+                </div>
+                <div class="stat-card critical">
+                    <h3>Fallidos</h3>
+                    <div class="stat-value" id="testFailed">0</div>
+                </div>
+            </div>
+            <div class="content-container" id="testingContent"></div>
+        </div>
+
+        <!-- TAB: INFORMES -->
+        <div id="tab-reports" class="tab-content">
+            <div class="controls">
+                <button onclick="generateReport()">📄 Generar Informe Completo</button>
+                <button onclick="printReport()">🖨️ Imprimir Informe</button>
+                <button onclick="exportReportPDF()">📥 Descargar PDF</button>
+            </div>
+
+            <div class="content-container" id="reportContent">
+                <h2 style="text-align: center; color: #667eea; margin-bottom: 30px;">
+                    📊 INFORME DE GESTIÓN DE SERVICIOS DE TI
+                </h2>
+                <p style="text-align: center; color: #666; margin-bottom: 40px;">
+                    Generado el: <span id="reportDate"></span>
+                </p>
+
+                <div class="report-section">
+                    <h3>📋 Resumen Ejecutivo</h3>
+                    <div class="report-grid">
+                        <div class="report-card">
+                            <h4>Total de Tickets</h4>
+                            <div class="value" id="report-total">0</div>
+                        </div>
+                        <div class="report-card">
+                            <h4>Tickets Abiertos</h4>
+                            <div class="value" id="report-open">0</div>
+                        </div>
+                        <div class="report-card">
+                            <h4>Tickets Cerrados</h4>
+                            <div class="value" id="report-closed">0</div>
+                        </div>
+                        <div class="report-card">
+                            <h4>Tasa de Resolución</h4>
+                            <div class="value" id="report-resolution">0%</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="report-section">
+                    <h3>⏱️ Análisis de SLA</h3>
+                    <div class="report-grid">
+                        <div class="report-card">
+                            <h4>SLA Cumplidos</h4>
+                            <div class="value" style="color: #2ecc71;" id="report-sla-met">0</div>
+                        </div>
+                        <div class="report-card">
+                            <h4>En Riesgo</h4>
+                            <div class="value" style="color: #f39c12;" id="report-sla-risk">0</div>
+                        </div>
+                        <div class="report-card">
+                            <h4>Incumplidos</h4>
+                            <div class="value" style="color: #e74c3c;" id="report-sla-breach">0</div>
+                        </div>
+                        <div class="report-card">
+                            <h4>% Cumplimiento</h4>
+                            <div class="value" id="report-sla-percent">0%</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="report-section">
+                    <h3>🎯 Distribución por Prioridad</h3>
+                    <div class="report-grid">
+                        <div class="report-card">
+                            <h4>Crítica</h4>
+                            <div class="value" style="color: #e74c3c;" id="report-critical">0</div>
+                        </div>
+                        <div class="report-card">
+                            <h4>Alta</h4>
+                            <div class="value" style="color: #f39c12;" id="report-high">0</div>
+                        </div>
+                        <div class="report-card">
+                            <h4>Media</h4>
+                            <div class="value" style="color: #3498db;" id="report-medium">0</div>
+                        </div>
+                        <div class="report-card">
+                            <h4>Baja</h4>
+                            <div class="value" style="color: #2ecc71;" id="report-low">0</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="report-section">
+                    <h3>📂 Distribución por Categoría</h3>
+                    <div id="report-categories"></div>
+                </div>
+
+                <div class="report-section">
+                    <h3>👥 Rendimiento por Técnico</h3>
+                    <div id="report-technicians"></div>
+                </div>
+
+                <div class="report-section">
+                    <h3>🚀 Estado de Despliegues</h3>
+                    <div class="report-grid">
+                        <div class="report-card">
+                            <h4>Programados</h4>
+                            <div class="value" id="report-deploy-scheduled">0</div>
+                        </div>
+                        <div class="report-card">
+                            <h4>Completados</h4>
+                            <div class="value" id="report-deploy-completed">0</div>
+                        </div>
+                        <div class="report-card">
+                            <h4>Rollback</h4>
+                            <div class="value" id="report-deploy-rollback">0</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="report-section">
+                    <h3>✅ Resumen de Pruebas</h3>
+                    <div class="report-grid">
+                        <div class="report-card">
+                            <h4>Total de Pruebas</h4>
+                            <div class="value" id="report-tests-total">0</div>
+                        </div>
+                        <div class="report-card">
+                            <h4>Aprobadas</h4>
+                            <div class="value" style="color: #2ecc71;" id="report-tests-passed">0</div>
+                        </div>
+                        <div class="report-card">
+                            <h4>Fallidas</h4>
+                            <div class="value" style="color: #e74c3c;" id="report-tests-failed">0</div>
+                        </div>
+                        <div class="report-card">
+                            <h4>Cobertura Promedio</h4>
+                            <div class="value" id="report-coverage">0%</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="report-section">
+                    <h3>📊 Gráficos de Rendimiento</h3>
+                    <div class="charts-grid">
+                        <div class="chart-container">
+                            <h3>Estado de Tickets</h3>
+                            <div class="chart-wrapper">
+                                <canvas id="reportStatusChart"></canvas>
+                            </div>
+                        </div>
+                        <div class="chart-container">
+                            <h3>Prioridades</h3>
+                            <div class="chart-wrapper">
+                                <canvas id="reportPriorityChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="report-section">
+                    <h3>💡 Recomendaciones</h3>
+                    <div id="report-recommendations" style="background: #f8f9fa; padding: 20px; border-radius: 10px; line-height: 1.8;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL DETALLES TICKET -->
+    <div class="modal" id="detailModal" onclick="closeModalOnOutsideClick(event, 'detailModal')">
+        <div class="modal-content">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h2 style="margin: 0;">📋 Detalles del Ticket</h2>
+                <button onclick="closeDetailModal()" style="background: #e74c3c; padding: 8px 15px; font-size: 1.2em; line-height: 1;" title="Cerrar">✕</button>
+            </div>
+            <div id="ticketDetailContent"></div>
+            <div style="margin-top: 25px;">
+                <button onclick="closeDetailModal()">Cerrar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL NUEVO TICKET -->
+    <div class="modal" id="ticketModal">
+        <div class="modal-content">
+            <h2 id="modalTitle">Nuevo Ticket</h2>
+            <form id="ticketForm" onsubmit="saveTicket(event)">
+                <div class="form-group">
+                    <label>Título:</label>
+                    <input type="text" id="ticketTitle" required>
+                </div>
+                <div class="form-group">
+                    <label>Descripción:</label>
+                    <textarea id="ticketDesc" required></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Categoría:</label>
+                    <select id="ticketCategory" required>
+                        <option value="hardware">Hardware</option>
+                        <option value="software">Software</option>
+                        <option value="network">Red</option>
+                        <option value="security">Seguridad</option>
+                        <option value="access">Accesos</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Prioridad:</label>
+                    <select id="ticketPriority" required>
+                        <option value="low">Baja</option>
+                        <option value="medium">Media</option>
+                        <option value="high">Alta</option>
+                        <option value="critical">Crítica</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Asignar a:</label>
+                    <select id="ticketAssigned" required>
+                        <option value="Juan Pérez">Juan Pérez</option>
+                        <option value="María García">María García</option>
+                        <option value="Carlos López">Carlos López</option>
+                        <option value="Ana Martínez">Ana Martínez</option>
+                        <option value="Luis Rodríguez">Luis Rodríguez</option>
+                    </select>
+                </div>
+                <div style="display: flex; gap: 10px; margin-top: 25px;">
+                    <button type="submit">Guardar</button>
+                    <button type="button" onclick="closeModal()">Cancelar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        let tickets = [];
+        let ticketIdCounter = 1;
+        let autoGenerateInterval;
+        let allTickets = [];
+        let currentTab = 'tickets';
+        let charts = {};
+
+        const categories = ['hardware', 'software', 'network', 'security', 'access'];
+        const priorities = ['low', 'medium', 'high', 'critical'];
+        const statuses = ['pending', 'progress', 'resolved', 'closed'];
+        const technicians = ['Juan Pérez', 'María García', 'Carlos López', 'Ana Martínez', 'Luis Rodríguez'];
+
+        const ticketTitles = [
+            'Computadora no enciende', 'Impresora sin conexión', 'Error en aplicación contable',
+            'Lentitud en el sistema', 'Solicitud de acceso VPN', 'Cambio de contraseña',
+            'Instalación de software', 'Falla en servidor', 'Problemas con email',
+            'Actualización de sistema operativo', 'Configuración de red', 'Backup de datos',
+            'Mantenimiento preventivo', 'Soporte remoto requerido', 'Virus detectado',
+            'Pérdida de conexión internet', 'Solicitud de equipo nuevo', 'Migración de datos',
+            'Configuración de correo', 'Error en base de datos'
+        ];
+
+        const ticketDescriptions = [
+            'El equipo presenta problemas al momento de iniciar',
+            'No se puede establecer comunicación con el dispositivo',
+            'Se requiere asistencia técnica inmediata',
+            'El usuario reporta funcionamiento anómalo',
+            'Solicitud de configuración requerida',
+            'Se necesita realizar cambios en la configuración',
+            'Petición de instalación de nuevo software',
+            'Incidencia crítica que afecta operaciones',
+            'Problema detectado en servicios de comunicación',
+            'Actualización programada del sistema'
+        ];
+
+        function init() {
+            console.log('Iniciando sistema...');
+            generateInitialTickets();
+            renderTickets();
+            updateAllStats();
+            initializeCharts();
+            startAutoGeneration();
+            console.log('Sistema iniciado correctamente');
+        }
+
+        function switchTab(tab) {
+            currentTab = tab;
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            
+            event.target.classList.add('active');
+            document.getElementById('tab-' + tab).classList.add('active');
+            
+            updateTabContent(tab);
+        }
+
+        function updateTabContent(tab) {
+            switch(tab) {
+                case 'dashboard':
+                    updateDashboardCharts();
+                    break;
+                case 'sla':
+                    renderSLA();
+                    break;
+                case 'requests':
+                    renderRequests();
+                    break;
+                case 'deployment':
+                    renderDeployment();
+                    break;
+                case 'infrastructure':
+                    renderInfrastructure();
+                    break;
+                case 'development':
+                    renderDevelopment();
+                    break;
+                case 'testing':
+                    renderTesting();
+                    break;
+                case 'reports':
+                    generateReport();
+                    break;
+            }
+        }
+
+        function generateInitialTickets() {
+            for (let i = 0; i < 15; i++) {
+                createAutoTicket(false);
+            }
+        }
+
+        function createAutoTicket(showNotif) {
+            const ticket = {
+                id: ticketIdCounter++,
+                title: ticketTitles[Math.floor(Math.random() * ticketTitles.length)],
+                description: ticketDescriptions[Math.floor(Math.random() * ticketDescriptions.length)],
+                category: categories[Math.floor(Math.random() * categories.length)],
+                priority: priorities[Math.floor(Math.random() * priorities.length)],
+                status: statuses[Math.floor(Math.random() * 2)],
+                assigned: technicians[Math.floor(Math.random() * technicians.length)],
+                date: new Date().toLocaleString('es-ES'),
+                sla: generateSLA(),
+                timeline: generateTimeline(),
+                relatedData: generateRelatedData()
+            };
+
+            tickets.unshift(ticket);
+            allTickets = [...tickets];
+            
+            if (showNotif) {
+                renderTickets();
+                updateAllStats();
+                if (currentTab === 'dashboard') updateDashboardCharts();
+                showNotification('✅ Nuevo ticket generado: #' + ticket.id);
+            }
+            
+            return ticket;
+        }
+
+        function generateSLA() {
+            const priorities = {
+                'critical': { response: 1, resolution: 4 },
+                'high': { response: 2, resolution: 8 },
+                'medium': { response: 4, resolution: 24 },
+                'low': { response: 8, resolution: 72 }
+            };
+            
+            const priority = ['low', 'medium', 'high', 'critical'][Math.floor(Math.random() * 4)];
+            const slaData = priorities[priority];
+            const elapsed = Math.random() * slaData.resolution;
+            const remaining = slaData.resolution - elapsed;
+            
+            return {
+                responseTime: slaData.response,
+                resolutionTime: slaData.resolution,
+                elapsedTime: parseFloat(elapsed.toFixed(1)),
+                remainingTime: parseFloat(remaining.toFixed(1)),
+                status: remaining > 2 ? 'compliant' : remaining > 0 ? 'risk' : 'breached',
+                percentage: Math.min(100, (elapsed / slaData.resolution) * 100).toFixed(0)
+            };
+        }
+
+        function generateTimeline() {
+            const events = [
+                { status: 'Ticket creado', date: new Date(Date.now() - Math.random() * 86400000).toLocaleString('es-ES') },
+                { status: 'Asignado a técnico', date: new Date(Date.now() - Math.random() * 72000000).toLocaleString('es-ES') },
+                { status: 'En progreso', date: new Date(Date.now() - Math.random() * 36000000).toLocaleString('es-ES') }
+            ];
+            return events;
+        }
+
+        function generateRelatedData() {
+            return {
+                request: {
+                    id: 'REQ-' + Math.floor(Math.random() * 1000),
+                    type: ['Instalación', 'Configuración', 'Acceso', 'Cambio'][Math.floor(Math.random() * 4)],
+                    approver: technicians[Math.floor(Math.random() * technicians.length)],
+                    status: ['approved', 'pending', 'rejected'][Math.floor(Math.random() * 3)]
+                },
+                deployment: {
+                    id: 'DEP-' + Math.floor(Math.random() * 1000),
+                    environment: ['Desarrollo', 'Pruebas', 'Producción'][Math.floor(Math.random() * 3)],
+                    version: '1.' + Math.floor(Math.random() * 10) + '.' + Math.floor(Math.random() * 20),
+                    status: ['scheduled', 'deployed', 'rollback'][Math.floor(Math.random() * 3)]
+                },
+                infrastructure: {
+                    server: 'SRV-' + Math.floor(Math.random() * 50),
+                    ip: '192.168.' + Math.floor(Math.random() * 255) + '.' + Math.floor(Math.random() * 255),
+                    cpu: Math.floor(Math.random() * 100) + '%',
+                    memory: Math.floor(Math.random() * 100) + '%',
+                    disk: Math.floor(Math.random() * 100) + '%'
+                },
+                development: {
+                    feature: 'FEAT-' + Math.floor(Math.random() * 1000),
+                    branch: 'feature/' + Math.random().toString(36).substring(7),
+                    commits: Math.floor(Math.random() * 50),
+                    linesChanged: Math.floor(Math.random() * 1000),
+                    developer: technicians[Math.floor(Math.random() * technicians.length)]
+                },
+                testing: {
+                    testId: 'TEST-' + Math.floor(Math.random() * 1000),
+                    testType: ['Unitarias', 'Integración', 'Sistema', 'UAT'][Math.floor(Math.random() * 4)],
+                    passed: Math.floor(Math.random() * 50),
+                    failed: Math.floor(Math.random() * 10),
+                    coverage: Math.floor(Math.random() * 40 + 60) + '%'
+                }
+            };
+        }
+
+        function initializeCharts() {
+            // Configuración común para todos los gráficos
+            Chart.defaults.font.family = "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif";
+            Chart.defaults.font.size = 12;
+        }
+
+        function updateDashboardCharts() {
+            updateStatusChart();
+            updatePriorityChart();
+            updateCategoryChart();
+            updateSLAChart();
+            updateTechnicianChart();
+            updateTrendChart();
+        }
+
+        function updateStatusChart() {
+            const ctx = document.getElementById('statusChart');
+            if (!ctx) return;
+
+            const statusCounts = {
+                pending: allTickets.filter(t => t.status === 'pending').length,
+                progress: allTickets.filter(t => t.status === 'progress').length,
+                resolved: allTickets.filter(t => t.status === 'resolved').length,
+                closed: allTickets.filter(t => t.status === 'closed').length
+            };
+
+            if (charts.statusChart) charts.statusChart.destroy();
+
+            charts.statusChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Pendiente', 'En Progreso', 'Resuelto', 'Cerrado'],
+                    datasets: [{
+                        data: [statusCounts.pending, statusCounts.progress, statusCounts.resolved, statusCounts.closed],
+                        backgroundColor: ['#f39c12', '#3498db', '#2ecc71', '#95a5a6'],
+                        borderWidth: 2,
+                        borderColor: '#fff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
+                    }
+                }
+            });
+        }
+
+        function updatePriorityChart() {
+            const ctx = document.getElementById('priorityChart');
+            if (!ctx) return;
+
+            const priorityCounts = {
+                low: allTickets.filter(t => t.priority === 'low').length,
+                medium: allTickets.filter(t => t.priority === 'medium').length,
+                high: allTickets.filter(t => t.priority === 'high').length,
+                critical: allTickets.filter(t => t.priority === 'critical').length
+            };
+
+            if (charts.priorityChart) charts.priorityChart.destroy();
+
+            charts.priorityChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['Baja', 'Media', 'Alta', 'Crítica'],
+                    datasets: [{
+                        label: 'Número de Tickets',
+                        data: [priorityCounts.low, priorityCounts.medium, priorityCounts.high, priorityCounts.critical],
+                        backgroundColor: ['#2ecc71', '#3498db', '#f39c12', '#e74c3c'],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                stepSize: 1
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateCategoryChart() {
+            const ctx = document.getElementById('categoryChart');
+            if (!ctx) return;
+
+            const categoryCounts = {};
+            categories.forEach(cat => {
+                categoryCounts[cat] = allTickets.filter(t => t.category === cat).length;
+            });
+
+            if (charts.categoryChart) charts.categoryChart.destroy();
+
+            charts.categoryChart = new Chart(ctx, {
+                type: 'pie',
+                data: {
+                    labels: ['Hardware', 'Software', 'Red', 'Seguridad', 'Accesos'],
+                    datasets: [{
+                        data: [
+                            categoryCounts.hardware,
+                            categoryCounts.software,
+                            categoryCounts.network,
+                            categoryCounts.security,
+                            categoryCounts.access
+                        ],
+                        backgroundColor: ['#3498db', '#9b59b6', '#e67e22', '#e74c3c', '#1abc9c'],
+                        borderWidth: 2,
+                        borderColor: '#fff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateSLAChart() {
+            const ctx = document.getElementById('slaChart');
+            if (!ctx) return;
+
+            const slaCounts = {
+                compliant: allTickets.filter(t => t.sla.status === 'compliant').length,
+                risk: allTickets.filter(t => t.sla.status === 'risk').length,
+                breached: allTickets.filter(t => t.sla.status === 'breached').length
+            };
+
+            if (charts.slaChart) charts.slaChart.destroy();
+
+            charts.slaChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Cumpliendo', 'En Riesgo', 'Incumplido'],
+                    datasets: [{
+                        data: [slaCounts.compliant, slaCounts.risk, slaCounts.breached],
+                        backgroundColor: ['#2ecc71', '#f39c12', '#e74c3c'],
+                        borderWidth: 2,
+                        borderColor: '#fff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateTechnicianChart() {
+            const ctx = document.getElementById('technicianChart');
+            if (!ctx) return;
+
+            const techCounts = {};
+            technicians.forEach(tech => {
+                techCounts[tech] = allTickets.filter(t => t.assigned === tech).length;
+            });
+
+            if (charts.technicianChart) charts.technicianChart.destroy();
+
+            charts.technicianChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: technicians,
+                    datasets: [{
+                        label: 'Tickets Asignados',
+                        data: technicians.map(tech => techCounts[tech]),
+                        backgroundColor: '#667eea',
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    indexAxis: 'y',
+                    scales: {
+                        x: {
+                            beginAtZero: true,
+                            ticks: {
+                                stepSize: 1
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateTrendChart() {
+            const ctx = document.getElementById('trendChart');
+            if (!ctx) return;
+
+            // Generar datos simulados para los últimos 7 días
+            const labels = [];
+            const data = [];
+            for (let i = 6; i >= 0; i--) {
+                const date = new Date();
+                date.setDate(date.getDate() - i);
+                labels.push(date.toLocaleDateString('es-ES', { weekday: 'short', day: 'numeric' }));
+                data.push(Math.floor(Math.random() * 10) + 5);
+            }
+
+            if (charts.trendChart) charts.trendChart.destroy();
+
+            charts.trendChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Tickets Creados',
+                        data: data,
+                        borderColor: '#667eea',
+                        backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                        tension: 0.4,
+                        fill: true,
+                        borderWidth: 3,
+                        pointRadius: 5,
+                        pointBackgroundColor: '#667eea'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                stepSize: 2
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    }
+                }
+            });
+        }
+
+        function manualGenerateTicket() {
+            createAutoTicket(true);
+        }
+
+        function startAutoGeneration() {
+            autoGenerateInterval = setInterval(() => {
+                if (Math.random() > 0.5) {
+                    createAutoTicket(true);
+                }
+                
+                if (Math.random() > 0.6) {
+                    updateRandomTicketStatus();
+                }
+            }, 10000);
+        }
+
+        function updateRandomTicketStatus() {
+            if (tickets.length === 0) return;
+            
+            const randomIndex = Math.floor(Math.random() * tickets.length);
+            const ticket = tickets[randomIndex];
+            const currentStatusIndex = statuses.indexOf(ticket.status);
+            
+            if (currentStatusIndex < statuses.length - 1) {
+                ticket.status = statuses[currentStatusIndex + 1];
+                ticket.timeline.push({
+                    status: getStatusText(ticket.status),
+                    date: new Date().toLocaleString('es-ES')
+                });
+                renderTickets();
+                updateAllStats();
+                if (currentTab === 'dashboard') updateDashboardCharts();
+            }
+        }
+
+        function showNotification(message) {
+            const notification = document.createElement('div');
+            notification.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: linear-gradient(135deg, #2ecc71, #27ae60);
+                color: white;
+                padding: 15px 25px;
+                border-radius: 10px;
+                box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+                z-index: 2000;
+                animation: slideIn 0.3s;
+                font-weight: 600;
+            `;
+            notification.textContent = message;
+            document.body.appendChild(notification);
+
+            setTimeout(() => {
+                notification.style.opacity = '0';
+                notification.style.transition = 'opacity 0.3s';
+                setTimeout(() => notification.remove(), 300);
+            }, 3000);
+        }
+
+        function addTicketModal() {
+            document.getElementById('modalTitle').textContent = 'Nuevo Ticket';
+            document.getElementById('ticketForm').reset();
+            document.getElementById('ticketModal').classList.add('active');
+        }
+
+        function closeModal() {
+            document.getElementById('ticketModal').classList.remove('active');
+        }
+
+        function closeDetailModal() {
+            document.getElementById('detailModal').classList.remove('active');
+        }
+
+        function saveTicket(e) {
+            e.preventDefault();
+
+            const ticket = {
+                id: ticketIdCounter++,
+                title: document.getElementById('ticketTitle').value,
+                description: document.getElementById('ticketDesc').value,
+                category: document.getElementById('ticketCategory').value,
+                priority: document.getElementById('ticketPriority').value,
+                status: 'pending',
+                assigned: document.getElementById('ticketAssigned').value,
+                date: new Date().toLocaleString('es-ES'),
+                sla: generateSLA(),
+                timeline: [{
+                    status: 'Ticket creado',
+                    date: new Date().toLocaleString('es-ES')
+                }],
+                relatedData: generateRelatedData()
+            };
+
+            tickets.unshift(ticket);
+            allTickets = [...tickets];
+            renderTickets();
+            updateAllStats();
+            if (currentTab === 'dashboard') updateDashboardCharts();
+            closeModal();
+            showNotification('✅ Ticket #' + ticket.id + ' creado exitosamente');
+        }
+
+        function renderTickets() {
+            const tbody = document.getElementById('ticketsTable');
+            tbody.innerHTML = '';
+
+            tickets.forEach(ticket => {
+                const row = tbody.insertRow();
+                row.setAttribute('data-id', ticket.id);
+                row.innerHTML = `
+                    <td><strong>#${ticket.id}</strong></td>
+                    <td>${ticket.title}</td>
+                    <td>${getCategoryName(ticket.category)}</td>
+                    <td><span class="badge ${ticket.priority}">${getPriorityName(ticket.priority)}</span></td>
+                    <td><span class="badge status-${ticket.status}">${getStatusText(ticket.status)}</span></td>
+                    <td>${ticket.assigned}</td>
+                    <td>${ticket.date}</td>
+                    <td class="actions">
+                        <button onclick="changeStatus(${ticket.id})" title="Cambiar estado">↻</button>
+                        <button onclick="viewTicketDetails(${ticket.id})" title="Ver detalles">👁️</button>
+                        <button onclick="deleteTicket(${ticket.id})" title="Eliminar">🗑️</button>
+                    </td>
+                `;
+            });
+        }
+
+        function viewTicketDetails(id) {
+            const ticket = allTickets.find(t => t.id === id);
+            if (!ticket) return;
+
+            const content = `
+                <div class="detail-section">
+                    <h3>📋 Información General</h3>
+                    <div class="detail-row">
+                        <span class="detail-label">ID:</span>
+                        <span class="detail-value">#${ticket.id}</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Título:</span>
+                        <span class="detail-value">${ticket.title}</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Descripción:</span>
+                        <span class="detail-value">${ticket.description}</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Categoría:</span>
+                        <span class="detail-value">${getCategoryName(ticket.category)}</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Prioridad:</span>
+                        <span class="detail-value"><span class="badge ${ticket.priority}">${getPriorityName(ticket.priority)}</span></span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Estado:</span>
+                        <span class="detail-value"><span class="badge status-${ticket.status}">${getStatusText(ticket.status)}</span></span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Asignado a:</span>
+                        <span class="detail-value">${ticket.assigned}</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Fecha de Creación:</span>
+                        <span class="detail-value">${ticket.date}</span>
+                    </div>
+                </div>
+
+                <div class="detail-section">
+                    <h3>⏱️ Nivel de Servicio (SLA)</h3>
+                    <div class="detail-row">
+                        <span class="detail-label">Tiempo de Respuesta:</span>
+                        <span class="detail-value">${ticket.sla.responseTime} horas</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Tiempo de Resolución:</span>
+                        <span class="detail-value">${ticket.sla.resolutionTime} horas</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Tiempo Transcurrido:</span>
+                        <span class="detail-value">${ticket.sla.elapsedTime} horas</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Tiempo Restante:</span>
+                        <span class="detail-value">${ticket.sla.remainingTime} horas</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Estado SLA:</span>
+                        <span class="detail-value">
+                            <span class="badge status-${ticket.sla.status === 'compliant' ? 'resolved' : ticket.sla.status === 'risk' ? 'progress' : 'pending'}">
+                                ${ticket.sla.status === 'compliant' ? 'Cumpliendo' : ticket.sla.status === 'risk' ? 'En Riesgo' : 'Incumplido'}
+                            </span>
+                        </span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: ${ticket.sla.percentage}%">${ticket.sla.percentage}%</div>
+                    </div>
+                </div>
+
+                <div class="detail-section">
+                    <h3>📝 Solicitud de Servicio</h3>
+                    <div class="detail-row">
+                        <span class="detail-label">ID Solicitud:</span>
+                        <span class="detail-value">${ticket.relatedData.request.id}</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Tipo:</span>
+                        <span class="detail-value">${ticket.relatedData.request.type}</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Aprobador:</span>
+                        <span class="detail-value">${ticket.relatedData.request.approver}</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Estado:</span>
+                        <span class="detail-value">
+                            <span class="badge status-${ticket.relatedData.request.status === 'approved' ? 'resolved' : 'pending'}">
+                                ${ticket.relatedData.request.status === 'approved' ? 'Aprobado' : ticket.relatedData.request.status === 'pending' ? 'Pendiente' : 'Rechazado'}
+                            </span>
+                        </span>
+                    </div>
+                </div>
+
+                <div class="detail-section">
+                    <h3>🚀 Gestión de Despliegue</h3>
+                    <div class="detail-row">
+                        <span class="detail-label">ID Despliegue:</span>
+                        <span class="detail-value">${ticket.relatedData.deployment.id}</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Entorno:</span>
+                        <span class="detail-value">${ticket.relatedData.deployment.environment}</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Versión:</span>
+                        <span class="detail-value">${ticket.relatedData.deployment.version}</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Estado:</span>
+                        <span class="detail-value">
+                            <span class="badge status-${ticket.relatedData.deployment.status === 'deployed' ? 'deployed' : 'pending'}">
+                                ${ticket.relatedData.deployment.status === 'deployed' ? 'Desplegado' : ticket.relatedData.deployment.status === 'scheduled' ? 'Programado' : 'Rollback'}
+                            </span>
+                        </span>
+                    </div>
+                </div>
+
+                <div class="detail-section">
+                    <h3>🖥️ Plataforma e Infraestructura</h3>
+                    <div class="detail-row">
+                        <span class="detail-label">Servidor:</span>
+                        <span class="detail-value">${ticket.relatedData.infrastructure.server}</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Dirección IP:</span>
+                        <span class="detail-value">${ticket.relatedData.infrastructure.ip}</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Uso de CPU:</span>
+                        <span class="detail-value">${ticket.relatedData.infrastructure.cpu}</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Uso de Memoria:</span>
+                        <span class="detail-value">${ticket.relatedData.infrastructure.memory}</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Uso de Disco:</span>
+                        <span class="detail-value">${ticket.relatedData.infrastructure.disk}</span>
+                    </div>
+                </div>
+
+                <div class="detail-section">
+                    <h3>💻 Gestión y Desarrollo de Software</h3>
+                    <div class="detail-row">
+                        <span class="detail-label">Feature:</span>
+                        <span class="detail-value">${ticket.relatedData.development.feature}</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Branch:</span>
+                        <span class="detail-value">${ticket.relatedData.development.branch}</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Commits:</span>
+                        <span class="detail-value">${ticket.relatedData.development.commits}</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Líneas Modificadas:</span>
+                        <span class="detail-value">${ticket.relatedData.development.linesChanged}</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Desarrollador:</span>
+                        <span class="detail-value">${ticket.relatedData.development.developer}</span>
+                    </div>
+                </div>
+
+                <div class="detail-section">
+                    <h3>✅ Pruebas y Validación del Servicio</h3>
+                    <div class="detail-row">
+                        <span class="detail-label">ID Prueba:</span>
+                        <span class="detail-value">${ticket.relatedData.testing.testId}</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Tipo de Prueba:</span>
+                        <span class="detail-value">${ticket.relatedData.testing.testType}</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Pruebas Aprobadas:</span>
+                        <span class="detail-value">${ticket.relatedData.testing.passed}</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Pruebas Fallidas:</span>
+                        <span class="detail-value">${ticket.relatedData.testing.failed}</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Cobertura:</span>
+                        <span class="detail-value">${ticket.relatedData.testing.coverage}</span>
+                    </div>
+                </div>
+
+                <div class="detail-section">
+                    <h3>📅 Línea de Tiempo</h3>
+                    <div class="timeline">
+                        ${ticket.timeline.map(event => `
+                            <div class="timeline-item">
+                                <strong>${event.status}</strong><br>
+                                <small style="color: #666;">${event.date}</small>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+
+            document.getElementById('ticketDetailContent').innerHTML = content;
+            document.getElementById('detailModal').classList.add('active');
+        }
+
+        function getCategoryName(category) {
+            const names = {
+                'hardware': 'Hardware',
+                'software': 'Software',
+                'network': 'Red',
+                'security': 'Seguridad',
+                'access': 'Accesos'
+            };
+            return names[category] || category;
+        }
+
+        function getPriorityName(priority) {
+            const names = {
+                'low': 'Baja',
+                'medium': 'Media',
+                'high': 'Alta',
+                'critical': 'Crítica'
+            };
+            return names[priority] || priority;
+        }
+
+        function getStatusText(status) {
+            const statusMap = {
+                'pending': 'Pendiente',
+                'progress': 'En Progreso',
+                'resolved': 'Resuelto',
+                'closed': 'Cerrado'
+            };
+            return statusMap[status] || status;
+        }
+
+        function changeStatus(id) {
+            const ticket = tickets.find(t => t.id === id);
+            if (ticket) {
+                const currentIndex = statuses.indexOf(ticket.status);
+                ticket.status = statuses[(currentIndex + 1) % statuses.length];
+                ticket.timeline.push({
+                    status: getStatusText(ticket.status),
+                    date: new Date().toLocaleString('es-ES')
+                });
+                
+                const ticketInAll = allTickets.find(t => t.id === id);
+                if (ticketInAll) {
+                    ticketInAll.status = ticket.status;
+                    ticketInAll.timeline = ticket.timeline;
+                }
+                
+                renderTickets();
+                updateAllStats();
+                if (currentTab === 'dashboard') updateDashboardCharts();
+                showNotification('🔄 Estado actualizado para ticket #' + id);
+            }
+        }
+
+        function deleteTicket(id) {
+            if (confirm('⚠️ ¿Estás seguro de eliminar este ticket?')) {
+                tickets = tickets.filter(t => t.id !== id);
+                allTickets = allTickets.filter(t => t.id !== id);
+                renderTickets();
+                updateAllStats();
+                if (currentTab === 'dashboard') updateDashboardCharts();
+                showNotification('🗑️ Ticket eliminado correctamente');
+            }
+        }
+
+        function updateAllStats() {
+            const pending = allTickets.filter(t => t.status === 'pending').length;
+            const progress = allTickets.filter(t => t.status === 'progress').length;
+            const resolved = allTickets.filter(t => t.status === 'resolved').length;
+            const critical = allTickets.filter(t => t.priority === 'critical').length;
+
+            document.getElementById('pendingCount').textContent = pending;
+            document.getElementById('progressCount').textContent = progress;
+            document.getElementById('resolvedCount').textContent = resolved;
+            document.getElementById('criticalCount').textContent = critical;
+
+            // Dashboard stats
+            document.getElementById('totalTickets').textContent = allTickets.length;
+            const resolutionRate = allTickets.length > 0 ? ((resolved / allTickets.length) * 100).toFixed(0) : 0;
+            document.getElementById('resolutionRate').textContent = resolutionRate + '%';
+            document.getElementById('avgTime').textContent = '12.5h';
+            document.getElementById('satisfaction').textContent = '94%';
+
+            updateSLAStats();
+            updateRequestStats();
+            updateDeploymentStats();
+            updateInfrastructureStats();
+            updateDevelopmentStats();
+            updateTestingStats();
+        }
+
+        function updateSLAStats() {
+            const compliant = allTickets.filter(t => t.sla.status === 'compliant').length;
+            const risk = allTickets.filter(t => t.sla.status === 'risk').length;
+            const breached = allTickets.filter(t => t.sla.status === 'breached').length;
+            const rate = allTickets.length > 0 ? ((compliant / allTickets.length) * 100).toFixed(0) : 0;
+
+            document.getElementById('slaCompliant').textContent = compliant;
+            document.getElementById('slaRisk').textContent = risk;
+            document.getElementById('slaBreached').textContent = breached;
+            document.getElementById('slaRate').textContent = rate + '%';
+        }
+
+        function updateRequestStats() {
+            const pending = allTickets.filter(t => t.relatedData.request.status === 'pending').length;
+            const approved = allTickets.filter(t => t.relatedData.request.status === 'approved').length;
+            const rejected = allTickets.filter(t => t.relatedData.request.status === 'rejected').length;
+
+            document.getElementById('requestsPending').textContent = pending;
+            document.getElementById('requestsProgress').textContent = approved;
+            document.getElementById('requestsCompleted').textContent = rejected;
+        }
+
+        function updateDeploymentStats() {
+            const scheduled = allTickets.filter(t => t.relatedData.deployment.status === 'scheduled').length;
+            const deployed = allTickets.filter(t => t.relatedData.deployment.status === 'deployed').length;
+            const rollback = allTickets.filter(t => t.relatedData.deployment.status === 'rollback').length;
+
+            document.getElementById('deployScheduled').textContent = scheduled;
+            document.getElementById('deployProgress').textContent = rollback;
+            document.getElementById('deployCompleted').textContent = deployed;
+        }
+
+        function updateInfrastructureStats() {
+            const active = Math.floor(allTickets.length * 0.7);
+            const maintenance = allTickets.length - active;
+            const availability = allTickets.length > 0 ? 99.5 : 100;
+
+            document.getElementById('serversActive').textContent = active;
+            document.getElementById('serversMaintenance').textContent = maintenance;
+            document.getElementById('availability').textContent = availability + '%';
+        }
+
+        function updateDevelopmentStats() {
+            const inProgress = allTickets.filter(t => t.status === 'progress' && t.category === 'software').length;
+            const review = Math.floor(allTickets.length * 0.2);
+            const completed = allTickets.filter(t => t.status === 'resolved' && t.category === 'software').length;
+
+            document.getElementById('devInProgress').textContent = inProgress;
+            document.getElementById('devReview').textContent = review;
+            document.getElementById('devCompleted').textContent = completed;
+        }
+
+        function updateTestingStats() {
+            const totalTests = allTickets.length * 10;
+            const passed = Math.floor(totalTests * 0.85);
+            const failed = Math.floor(totalTests * 0.05);
+            const running = totalTests - passed - failed;
+
+            document.getElementById('testPending').textContent = Math.floor(totalTests * 0.1);
+            document.getElementById('testRunning').textContent = running;
+            document.getElementById('testPassed').textContent = passed;
+            document.getElementById('testFailed').textContent = failed;
+        }
+
+        function renderSLA() {
+            const content = `
+                <h2 style="margin-bottom: 20px; color: #333;">Gestión de Niveles de Servicio (SLA)</h2>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Ticket ID</th>
+                            <th>Título</th>
+                            <th>Prioridad</th>
+                            <th>Tiempo Respuesta</th>
+                            <th>Tiempo Resolución</th>
+                            <th>Tiempo Restante</th>
+                            <th>Progreso</th>
+                            <th>Estado SLA</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${allTickets.map(ticket => `
+                            <tr>
+                                <td><strong>#${ticket.id}</strong></td>
+                                <td>${ticket.title}</td>
+                                <td><span class="badge ${ticket.priority}">${getPriorityName(ticket.priority)}</span></td>
+                                <td>${ticket.sla.responseTime}h</td>
+                                <td>${ticket.sla.resolutionTime}h</td>
+                                <td>${ticket.sla.remainingTime}h</td>
+                                <td>
+                                    <div class="progress-bar" style="height: 20px;">
+                                        <div class="progress-fill" style="width: ${ticket.sla.percentage}%; font-size: 0.75em;">${ticket.sla.percentage}%</div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="badge status-${ticket.sla.status === 'compliant' ? 'resolved' : ticket.sla.status === 'risk' ? 'progress' : 'pending'}">
+                                        ${ticket.sla.status === 'compliant' ? 'Cumpliendo' : ticket.sla.status === 'risk' ? 'En Riesgo' : 'Incumplido'}
+                                    </span>
+                                </td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+            document.getElementById('slaContent').innerHTML = content;
+        }
+
+        function renderRequests() {
+            const content = `
+                <h2 style="margin-bottom: 20px; color: #333;">Gestión de Solicitudes de Servicio</h2>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID Solicitud</th>
+                            <th>Ticket Relacionado</th>
+                            <th>Tipo</th>
+                            <th>Solicitante</th>
+                            <th>Aprobador</th>
+                            <th>Estado</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${allTickets.map(ticket => `
+                            <tr>
+                                <td><strong>${ticket.relatedData.request.id}</strong></td>
+                                <td>#${ticket.id}</td>
+                                <td>${ticket.relatedData.request.type}</td>
+                                <td>${ticket.assigned}</td>
+                                <td>${ticket.relatedData.request.approver}</td>
+                                <td>
+                                    <span class="badge status-${ticket.relatedData.request.status === 'approved' ? 'approved' : 'pending'}">
+                                        ${ticket.relatedData.request.status === 'approved' ? 'Aprobado' : ticket.relatedData.request.status === 'pending' ? 'Pendiente' : 'Rechazado'}
+                                    </span>
+                                </td>
+                                <td class="actions">
+                                    <button onclick="viewTicketDetails(${ticket.id})">👁️</button>
+                                </td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+            document.getElementById('requestsContent').innerHTML = content;
+        }
+
+        function renderDeployment() {
+            const content = `
+                <h2 style="margin-bottom: 20px; color: #333;">Gestión de Despliegue</h2>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID Despliegue</th>
+                            <th>Ticket</th>
+                            <th>Entorno</th>
+                            <th>Versión</th>
+                            <th>Responsable</th>
+                            <th>Estado</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${allTickets.map(ticket => `
+                            <tr>
+                                <td><strong>${ticket.relatedData.deployment.id}</strong></td>
+                                <td>#${ticket.id}</td>
+                                <td>${ticket.relatedData.deployment.environment}</td>
+                                <td>${ticket.relatedData.deployment.version}</td>
+                                <td>${ticket.assigned}</td>
+                                <td>
+                                    <span class="badge status-${ticket.relatedData.deployment.status === 'deployed' ? 'deployed' : 'pending'}">
+                                        ${ticket.relatedData.deployment.status === 'deployed' ? 'Desplegado' : ticket.relatedData.deployment.status === 'scheduled' ? 'Programado' : 'Rollback'}
+                                    </span>
+                                </td>
+                                <td class="actions">
+                                    <button onclick="viewTicketDetails(${ticket.id})">👁️</button>
+                                </td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+            document.getElementById('deploymentContent').innerHTML = content;
+        }
+
+        function renderInfrastructure() {
+            const content = `
+                <h2 style="margin-bottom: 20px; color: #333;">Gestión de Plataforma e Infraestructura</h2>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Servidor</th>
+                            <th>Ticket</th>
+                            <th>Dirección IP</th>
+                            <th>CPU</th>
+                            <th>Memoria</th>
+                            <th>Disco</th>
+                            <th>Estado</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${allTickets.map(ticket => `
+                            <tr>
+                                <td><strong>${ticket.relatedData.infrastructure.server}</strong></td>
+                                <td>#${ticket.id}</td>
+                                <td>${ticket.relatedData.infrastructure.ip}</td>
+                                <td>
+                                    <div class="progress-bar" style="height: 18px;">
+                                        <div class="progress-fill" style="width: ${ticket.relatedData.infrastructure.cpu}; font-size: 0.7em;">${ticket.relatedData.infrastructure.cpu}</div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="progress-bar" style="height: 18px;">
+                                        <div class="progress-fill" style="width: ${ticket.relatedData.infrastructure.memory}; font-size: 0.7em;">${ticket.relatedData.infrastructure.memory}</div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="progress-bar" style="height: 18px;">
+                                        <div class="progress-fill" style="width: ${ticket.relatedData.infrastructure.disk}; font-size: 0.7em;">${ticket.relatedData.infrastructure.disk}</div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="badge status-${parseInt(ticket.relatedData.infrastructure.cpu) < 80 ? 'resolved' : 'pending'}">
+                                        ${parseInt(ticket.relatedData.infrastructure.cpu) < 80 ? 'Operativo' : 'Alto Uso'}
+                                    </span>
+                                </td>
+                                <td class="actions">
+                                    <button onclick="viewTicketDetails(${ticket.id})">👁️</button>
+                                </td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+            document.getElementById('infrastructureContent').innerHTML = content;
+        }
+
+        function renderDevelopment() {
+            const content = `
+                <h2 style="margin-bottom: 20px; color: #333;">Gestión y Desarrollo de Software</h2>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Feature</th>
+                            <th>Ticket</th>
+                            <th>Branch</th>
+                            <th>Desarrollador</th>
+                            <th>Commits</th>
+                            <th>Líneas Modificadas</th>
+                            <th>Estado</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${allTickets.map(ticket => `
+                            <tr>
+                                <td><strong>${ticket.relatedData.development.feature}</strong></td>
+                                <td>#${ticket.id}</td>
+                                <td><code style="background: #f0f0f0; padding: 2px 6px; border-radius: 3px;">${ticket.relatedData.development.branch}</code></td>
+                                <td>${ticket.relatedData.development.developer}</td>
+                                <td>${ticket.relatedData.development.commits}</td>
+                                <td>${ticket.relatedData.development.linesChanged}</td>
+                                <td>
+                                    <span class="badge status-${ticket.status === 'resolved' ? 'resolved' : 'progress'}">
+                                        ${ticket.status === 'resolved' ? 'Completado' : ticket.status === 'progress' ? 'En Desarrollo' : 'Pendiente'}
+                                    </span>
+                                </td>
+                                <td class="actions">
+                                    <button onclick="viewTicketDetails(${ticket.id})">👁️</button>
+                                </td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+            document.getElementById('developmentContent').innerHTML = content;
+        }
+
+        function renderTesting() {
+            const content = `
+                <h2 style="margin-bottom: 20px; color: #333;">Pruebas y Validación del Servicio</h2>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID Prueba</th>
+                            <th>Ticket</th>
+                            <th>Tipo</th>
+                            <th>Aprobadas</th>
+                            <th>Fallidas</th>
+                            <th>Total</th>
+                            <th>Cobertura</th>
+                            <th>Estado</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${allTickets.map(ticket => {
+                            const total = ticket.relatedData.testing.passed + ticket.relatedData.testing.failed;
+                            const passRate = total > 0 ? ((ticket.relatedData.testing.passed / total) * 100).toFixed(0) : 0;
+                            return `
+                            <tr>
+                                <td><strong>${ticket.relatedData.testing.testId}</strong></td>
+                                <td>#${ticket.id}</td>
+                                <td>${ticket.relatedData.testing.testType}</td>
+                                <td><span style="color: #2ecc71; font-weight: bold;">${ticket.relatedData.testing.passed}</span></td>
+                                <td><span style="color: #e74c3c; font-weight: bold;">${ticket.relatedData.testing.failed}</span></td>
+                                <td>${total}</td>
+                                <td>
+                                    <div class="progress-bar" style="height: 18px;">
+                                        <div class="progress-fill" style="width: ${ticket.relatedData.testing.coverage}; font-size: 0.7em;">${ticket.relatedData.testing.coverage}</div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="badge status-${passRate > 90 ? 'resolved' : passRate > 70 ? 'testing' : 'pending'}">
+                                        ${passRate > 90 ? 'Aprobado' : passRate > 70 ? 'En Pruebas' : 'Requiere Atención'}
+                                    </span>
+                                </td>
+                                <td class="actions">
+                                    <button onclick="viewTicketDetails(${ticket.id})">👁️</button>
+                                </td>
+                            </tr>
+                        `}).join('')}
+                    </tbody>
+                </table>
+            `;
+            document.getElementById('testingContent').innerHTML = content;
+        }
+
+        function generateReport() {
+            document.getElementById('reportDate').textContent = new Date().toLocaleString('es-ES');
+
+            // Resumen ejecutivo
+            const totalTickets = allTickets.length;
+            const openTickets = allTickets.filter(t => t.status !== 'closed' && t.status !== 'resolved').length;
+            const closedTickets = allTickets.filter(t => t.status === 'closed' || t.status === 'resolved').length;
+            const resolutionRate = totalTickets > 0 ? ((closedTickets / totalTickets) * 100).toFixed(0) : 0;
+
+            document.getElementById('report-total').textContent = totalTickets;
+            document.getElementById('report-open').textContent = openTickets;
+            document.getElementById('report-closed').textContent = closedTickets;
+            document.getElementById('report-resolution').textContent = resolutionRate + '%';
+
+            // Análisis de SLA
+            const slaCompliant = allTickets.filter(t => t.sla.status === 'compliant').length;
+            const slaRisk = allTickets.filter(t => t.sla.status === 'risk').length;
+            const slaBreach = allTickets.filter(t => t.sla.status === 'breached').length;
+            const slaPercent = totalTickets > 0 ? ((slaCompliant / totalTickets) * 100).toFixed(0) : 0;
+
+            document.getElementById('report-sla-met').textContent = slaCompliant;
+            document.getElementById('report-sla-risk').textContent = slaRisk;
+            document.getElementById('report-sla-breach').textContent = slaBreach;
+            document.getElementById('report-sla-percent').textContent = slaPercent + '%';
+
+            // Distribución por prioridad
+            const criticalCount = allTickets.filter(t => t.priority === 'critical').length;
+            const highCount = allTickets.filter(t => t.priority === 'high').length;
+            const mediumCount = allTickets.filter(t => t.priority === 'medium').length;
+            const lowCount = allTickets.filter(t => t.priority === 'low').length;
+
+            document.getElementById('report-critical').textContent = criticalCount;
+            document.getElementById('report-high').textContent = highCount;
+            document.getElementById('report-medium').textContent = mediumCount;
+            document.getElementById('report-low').textContent = lowCount;
+
+            // Distribución por categoría
+            const categoriesHTML = categories.map(cat => {
+                const count = allTickets.filter(t => t.category === cat).length;
+                const percent = totalTickets > 0 ? ((count / totalTickets) * 100).toFixed(0) : 0;
+                return `
+                    <div class="report-card">
+                        <h4>${getCategoryName(cat)}</h4>
+                        <div class="value">${count} <small style="font-size: 0.5em; color: #666;">(${percent}%)</small></div>
+                    </div>
+                `;
+            }).join('');
+            document.getElementById('report-categories').innerHTML = `<div class="report-grid">${categoriesHTML}</div>`;
+
+            // Rendimiento por técnico
+            const techniciansHTML = technicians.map(tech => {
+                const techTickets = allTickets.filter(t => t.assigned === tech);
+                const resolved = techTickets.filter(t => t.status === 'resolved' || t.status === 'closed').length;
+                const rate = techTickets.length > 0 ? ((resolved / techTickets.length) * 100).toFixed(0) : 0;
+                return `
+                    <div class="report-card">
+                        <h4>${tech}</h4>
+                        <div class="value">${techTickets.length} <small style="font-size: 0.5em; color: #666;">tickets</small></div>
+                        <small style="color: #666;">Resolución: ${rate}%</small>
+                    </div>
+                `;
+            }).join('');
+            document.getElementById('report-technicians').innerHTML = `<div class="report-grid">${techniciansHTML}</div>`;
+
+            // Estado de despliegues
+            const deployScheduled = allTickets.filter(t => t.relatedData.deployment.status === 'scheduled').length;
+            const deployCompleted = allTickets.filter(t => t.relatedData.deployment.status === 'deployed').length;
+            const deployRollback = allTickets.filter(t => t.relatedData.deployment.status === 'rollback').length;
+
+            document.getElementById('report-deploy-scheduled').textContent = deployScheduled;
+            document.getElementById('report-deploy-completed').textContent = deployCompleted;
+            document.getElementById('report-deploy-rollback').textContent = deployRollback;
+
+            // Resumen de pruebas
+            let totalTests = 0, totalPassed = 0, totalFailed = 0, avgCoverage = 0;
+            allTickets.forEach(ticket => {
+                totalPassed += ticket.relatedData.testing.passed;
+                totalFailed += ticket.relatedData.testing.failed;
+                avgCoverage += parseInt(ticket.relatedData.testing.coverage);
+            });
+            totalTests = totalPassed + totalFailed;
+            avgCoverage = allTickets.length > 0 ? Math.round(avgCoverage / allTickets.length) : 0;
+
+            document.getElementById('report-tests-total').textContent = totalTests;
+            document.getElementById('report-tests-passed').textContent = totalPassed;
+            document.getElementById('report-tests-failed').textContent = totalFailed;
+            document.getElementById('report-coverage').textContent = avgCoverage + '%';
+
+            // Generar gráficos del reporte
+            generateReportCharts();
+
+            // Generar recomendaciones
+            generateRecommendations();
+        }
+
+        function generateReportCharts() {
+            // Gráfico de estado
+            const ctx1 = document.getElementById('reportStatusChart');
+            if (ctx1) {
+                if (charts.reportStatusChart) charts.reportStatusChart.destroy();
+
+                const statusCounts = {
+                    pending: allTickets.filter(t => t.status === 'pending').length,
+                    progress: allTickets.filter(t => t.status === 'progress').length,
+                    resolved: allTickets.filter(t => t.status === 'resolved').length,
+                    closed: allTickets.filter(t => t.status === 'closed').length
+                };
+
+                charts.reportStatusChart = new Chart(ctx1, {
+                    type: 'pie',
+                    data: {
+                        labels: ['Pendiente', 'En Progreso', 'Resuelto', 'Cerrado'],
+                        datasets: [{
+                            data: [statusCounts.pending, statusCounts.progress, statusCounts.resolved, statusCounts.closed],
+                            backgroundColor: ['#f39c12', '#3498db', '#2ecc71', '#95a5a6'],
+                            borderWidth: 2,
+                            borderColor: '#fff'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'bottom'
+                            }
+                        }
+                    }
+                });
+            }
+
+            // Gráfico de prioridad
+            const ctx2 = document.getElementById('reportPriorityChart');
+            if (ctx2) {
+                if (charts.reportPriorityChart) charts.reportPriorityChart.destroy();
+
+                const priorityCounts = {
+                    low: allTickets.filter(t => t.priority === 'low').length,
+                    medium: allTickets.filter(t => t.priority === 'medium').length,
+                    high: allTickets.filter(t => t.priority === 'high').length,
+                    critical: allTickets.filter(t => t.priority === 'critical').length
+                };
+
+                charts.reportPriorityChart = new Chart(ctx2, {
+                    type: 'bar',
+                    data: {
+                        labels: ['Baja', 'Media', 'Alta', 'Crítica'],
+                        datasets: [{
+                            label: 'Tickets',
+                            data: [priorityCounts.low, priorityCounts.medium, priorityCounts.high, priorityCounts.critical],
+                            backgroundColor: ['#2ecc71', '#3498db', '#f39c12', '#e74c3c'],
+                            borderWidth: 0
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: {
+                                    stepSize: 1
+                                }
+                            }
+                        },
+                        plugins: {
+                            legend: {
+                                display: false
+                            }
+                        }
+                    }
+                });
+            }
+        }
+
+        function generateRecommendations() {
+            const recommendations = [];
+            
+            // Análisis de SLA
+            const slaBreached = allTickets.filter(t => t.sla.status === 'breached').length;
+            const slaRisk = allTickets.filter(t => t.sla.status === 'risk').length;
+            
+            if (slaBreached > 0) {
+                recommendations.push(`⚠️ Se detectaron ${slaBreached} tickets con SLA incumplido. Se recomienda revisar los procesos de asignación y escalamiento.`);
+            }
+            
+            if (slaRisk > 2) {
+                recommendations.push(`🔔 Hay ${slaRisk} tickets en riesgo de incumplir SLA. Se sugiere priorizar estos casos inmediatamente.`);
+            }
+
+            // Análisis de carga de trabajo
+            const techWorkload = {};
+            technicians.forEach(tech => {
+                techWorkload[tech] = allTickets.filter(t => t.assigned === tech && t.status !== 'closed' && t.status !== 'resolved').length;
+            });
+            
+            const maxWorkload = Math.max(...Object.values(techWorkload));
+            const minWorkload = Math.min(...Object.values(techWorkload));
+            
+            if (maxWorkload - minWorkload > 3) {
+                recommendations.push(`📊 Existe desbalance en la carga de trabajo entre técnicos. Considere redistribuir tickets para optimizar la eficiencia.`);
+            }
+
+            // Análisis de prioridades críticas
+            const criticalPending = allTickets.filter(t => t.priority === 'critical' && t.status === 'pending').length;
+            
+            if (criticalPending > 0) {
+                recommendations.push(`🚨 Hay ${criticalPending} tickets críticos pendientes de asignación. Requieren atención inmediata.`);
+            }
+
+            // Análisis de categorías
+            const categoryCounts = {};
+            categories.forEach(cat => {
+                categoryCounts[cat] = allTickets.filter(t => t.category === cat).length;
+            });
+            
+            const maxCategory = Object.keys(categoryCounts).reduce((a, b) => categoryCounts[a] > categoryCounts[b] ? a : b);
+            const maxCategoryCount = categoryCounts[maxCategory];
+            
+            if (maxCategoryCount > allTickets.length * 0.4) {
+                recommendations.push(`📈 La categoría "${getCategoryName(maxCategory)}" representa el ${((maxCategoryCount / allTickets.length) * 100).toFixed(0)}% de los tickets. Considere capacitación o recursos adicionales en esta área.`);
+            }
+
+            // Análisis de pruebas
+            const failedTests = allTickets.reduce((sum, t) => sum + t.relatedData.testing.failed, 0);
+            const totalTests = allTickets.reduce((sum, t) => sum + t.relatedData.testing.passed + t.relatedData.testing.failed, 0);
+            const failRate = totalTests > 0 ? ((failedTests / totalTests) * 100).toFixed(1) : 0;
+            
+            if (failRate > 10) {
+                recommendations.push(`🔍 La tasa de pruebas fallidas es del ${failRate}%. Se recomienda revisar los procesos de testing y calidad.`);
+            }
+
+            // Análisis de despliegues
+            const rollbacks = allTickets.filter(t => t.relatedData.deployment.status === 'rollback').length;
+            
+            if (rollbacks > 2) {
+                recommendations.push(`🔄 Se registraron ${rollbacks} rollbacks. Evaluar procedimientos de despliegue y pruebas pre-producción.`);
+            }
+
+            // Recomendaciones generales
+            const resolutionRate = allTickets.length > 0 ? ((allTickets.filter(t => t.status === 'resolved' || t.status === 'closed').length / allTickets.length) * 100).toFixed(0) : 0;
+            
+            if (resolutionRate < 60) {
+                recommendations.push(`📉 La tasa de resolución actual es del ${resolutionRate}%. Objetivo recomendado: 75% o superior.`);
+            } else if (resolutionRate > 80) {
+                recommendations.push(`✅ Excelente tasa de resolución del ${resolutionRate}%. El equipo mantiene un buen rendimiento.`);
+            }
+
+            // Mostrar recomendaciones
+            if (recommendations.length === 0) {
+                recommendations.push(`✅ El sistema está operando dentro de los parámetros normales. Continuar monitoreando métricas clave.`);
+            }
+
+            document.getElementById('report-recommendations').innerHTML = recommendations.map(rec => 
+                `<p style="margin-bottom: 15px;"><strong>•</strong> ${rec}</p>`
+            ).join('');
+        }
+
+        function printReport() {
+            window.print();
+        }
+
+        function exportReportPDF() {
+            showNotification('📥 Generando PDF...');
+            setTimeout(() => {
+                window.print();
+                showNotification('✅ Puede guardar como PDF usando la opción de impresión');
+            }, 500);
+        }
+
+        function filterTickets() {
+            const statusFilter = document.getElementById('filterStatus').value;
+            const priorityFilter = document.getElementById('filterPriority').value;
+            const searchText = document.getElementById('searchInput').value.toLowerCase();
+
+            tickets = allTickets.filter(ticket => {
+                const matchStatus = statusFilter === 'all' || ticket.status === statusFilter;
+                const matchPriority = priorityFilter === 'all' || ticket.priority === priorityFilter;
+                const matchSearch = searchText === '' || 
+                    ticket.title.toLowerCase().includes(searchText) ||
+                    ticket.description.toLowerCase().includes(searchText) ||
+                    ticket.assigned.toLowerCase().includes(searchText);
+
+                return matchStatus && matchPriority && matchSearch;
+            });
+
+            renderTickets();
+        }
+
+        function exportData() {
+            const csv = ['ID,Título,Categoría,Prioridad,Estado,Asignado,Fecha,SLA Estado,Tiempo Restante,Solicitud ID,Despliegue ID,Servidor,Feature,Test ID'];
+            
+            allTickets.forEach(ticket => {
+                const row = [
+                    ticket.id,
+                    `"${ticket.title}"`,
+                    getCategoryName(ticket.category),
+                    getPriorityName(ticket.priority),
+                    getStatusText(ticket.status),
+                    ticket.assigned,
+                    `"${ticket.date}"`,
+                    ticket.sla.status,
+                    ticket.sla.remainingTime + 'h',
+                    ticket.relatedData.request.id,
+                    ticket.relatedData.deployment.id,
+                    ticket.relatedData.infrastructure.server,
+                    ticket.relatedData.development.feature,
+                    ticket.relatedData.testing.testId
+                ];
+                csv.push(row.join(','));
+            });
+
+            const csvContent = csv.join('\n');
+            const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = window.URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `gestion_servicios_ti_${new Date().getTime()}.csv`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            window.URL.revokeObjectURL(url);
+            
+            showNotification('📊 Datos exportados exitosamente');
+        }
+
+        window.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>
